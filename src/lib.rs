@@ -1,4 +1,4 @@
-use discord_flows::create_text_message_in_dm;
+use discord_flows::create_text_message_in_channel;
 use github_flows::{listen_to_event, EventPayload};
 
 #[no_mangle]
@@ -8,19 +8,25 @@ pub async fn run() {
     let owner = "jaykchen";
     let repo = "a-test";
     let label_watch_list = vec!["good first issue".to_string()];
-    let username = "jaykchen";
+    let guild_name = "myserver";
+    let channel_name = "general";
 
     listen_to_event(
         login,
         owner,
         repo,
         vec!["issues", "issue_comment"],
-        |payload| handler(&username, payload, &label_watch_list),
+        |payload| handler(guild_name, channel_name, payload, &label_watch_list),
     )
     .await;
 }
 
-async fn handler(username: &str, payload: EventPayload, label_watch_list: &Vec<String>) {
+async fn handler(
+    guild_name: &str,
+    channel_name: &str,
+    payload: EventPayload,
+    label_watch_list: &Vec<String>,
+) {
     let lowercase_list = label_watch_list
         .into_iter()
         .map(|word| word.to_ascii_lowercase())
@@ -53,7 +59,7 @@ async fn handler(username: &str, payload: EventPayload, label_watch_list: &Vec<S
                     "A good first issue: {issue_title} by {user}\n 
                     {issue_url}"
                 );
-                create_text_message_in_dm(username, body, None);
+                create_text_message_in_channel(guild_name, channel_name, body, None);
 
                 return;
             }
