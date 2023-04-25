@@ -7,7 +7,13 @@ pub async fn run() {
     let login = "jaykchen";
     let owner = "jaykchen";
     let repo = "a-test";
-    let label_watch_list = vec!["good first issue".to_string()];
+    let label_watch_list = vec![
+        "good first issue".to_string(),
+        "help wanted".to_string(),
+        "LFX mentorship".to_string(),
+        "OSPP".to_string(),
+        "Hacktoberfest".to_string(),
+    ];
     let guild_name = "myserver";
     let channel_name = "general";
 
@@ -32,37 +38,49 @@ async fn handler(
         .map(|word| word.to_ascii_lowercase())
         .collect::<Vec<String>>();
 
-    let mut issue = None;
-
     match payload {
         EventPayload::IssuesEvent(e) => {
-            issue = Some(e.issue);
+            let issue = e.issue;
+            let issue_title = issue.title;
+            let issue_url = issue.html_url;
+            let user = issue.user.login;
+            let labels = issue.labels;
+
+            for label in labels {
+                let label_name = label.name;
+                if lowercase_list.contains(&label_name.to_lowercase()) {
+                    let body = format!(
+                        "{label_name}: {issue_title} by {user}\n 
+                            {issue_url}"
+                    );
+                    create_text_message_in_channel(guild_name, channel_name, body, None);
+
+                    return;
+                }
+            }
         }
 
         EventPayload::IssueCommentEvent(e) => {
-            issue = Some(e.issue);
+            let issue = e.issue;
+            let comment = e.comment;
+            let issue_title = issue.title;
+            let labels = issue.labels;
+            let comment_url = comment.html_url;
+            let comment_content = comment.body.unwrap();
+
+            for label in labels {
+                let label_name = label.name.to_lowercase();
+                if lowercase_list.contains(&label_name) {
+                    let body = format!(
+                            "A new comment is added for {issue_title}: {comment_content}\n {comment_url}"
+                        );
+                    create_text_message_in_channel(guild_name, channel_name, body, None);
+
+                    return;
+                }
+            }
         }
 
         _ => (),
-    }
-
-    if let Some(issue) = issue {
-        let issue_title = issue.title;
-        let issue_url = issue.html_url;
-        let user = issue.user.login;
-        let labels = issue.labels;
-
-        for label in labels {
-            let label_name = label.name.to_lowercase();
-            if lowercase_list.contains(&label_name) {
-                let body = format!(
-                    "A good first issue: {issue_title} by {user}\n 
-                    {issue_url}"
-                );
-                create_text_message_in_channel(guild_name, channel_name, body, None);
-
-                return;
-            }
-        }
     }
 }
