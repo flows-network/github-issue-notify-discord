@@ -1,5 +1,7 @@
 use discord_flows::create_text_message_in_channel;
-use github_flows::{listen_to_event, EventPayload};
+use github_flows::{listen_to_event, EventPayload,
+    octocrab::models::events::payload::IssuesEventAction
+};
 
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
@@ -40,6 +42,9 @@ async fn handler(
 
     match payload {
         EventPayload::IssuesEvent(e) => {
+            if e.action == IssuesEventAction::Closed || e.action == IssuesEventAction::Edited {
+                return;
+            }
             let issue = e.issue;
             let issue_title = issue.title;
             let issue_url = issue.html_url;
@@ -49,10 +54,7 @@ async fn handler(
             for label in labels {
                 let label_name = label.name;
                 if lowercase_list.contains(&label_name.to_lowercase()) {
-                    let body = format!(
-                        "{label_name}: {issue_title} by {user}\n 
-                            {issue_url}"
-                    );
+                    let body = format!("{label_name}: {issue_title} by {user}\n{issue_url}");
                     create_text_message_in_channel(guild_name, channel_name, body, None);
 
                     return;
@@ -72,7 +74,7 @@ async fn handler(
                 let label_name = label.name.to_lowercase();
                 if lowercase_list.contains(&label_name) {
                     let body = format!(
-                            "A new comment is added for {issue_title}: {comment_content}\n {comment_url}"
+                            "A new comment is added for {issue_title}: {comment_content}\n{comment_url}"
                         );
                     create_text_message_in_channel(guild_name, channel_name, body, None);
 
