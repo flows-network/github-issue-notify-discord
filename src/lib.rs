@@ -1,6 +1,8 @@
 use discord_flows::create_text_message_in_channel;
 use github_flows::{
-    listen_to_event, octocrab::models::events::payload::IssuesEventAction, EventPayload,
+    listen_to_event,
+    octocrab::models::events::payload::{IssueCommentEventAction, IssuesEventAction},
+    EventPayload,
     GithubLogin::Provided,
 };
 
@@ -64,6 +66,12 @@ async fn handler(label_watch_list: &Vec<String>, payload: EventPayload) {
         }
 
         EventPayload::IssueCommentEvent(e) => {
+            if e.action == IssueCommentEventAction::Deleted
+                || e.action == IssueCommentEventAction::Edited
+            {
+                return;
+            }
+
             let issue = e.issue;
             let comment = e.comment;
             let issue_title = issue.title;
