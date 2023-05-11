@@ -60,6 +60,7 @@ async fn handler(label_watch_list: &Vec<String>, payload: EventPayload) {
                     let body = format!("{label_name}: {issue_title} by {user}\n{issue_url}");
                     create_text_message_in_channel(&discord_server, &discord_channel, body, None);
 
+
                     return;
                 }
             }
